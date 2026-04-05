@@ -1,4 +1,4 @@
-# FestMS — College Fest Management System
+# TATVA — College Fest Management System
 
 A Django web app to manage participants, events, and gate check-ins for a college fest.
 
