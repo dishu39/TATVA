@@ -1,0 +1,99 @@
+{% extends 'events/base.html' %}
+{% block title %}Gate Check-in{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Gate Check-in</h2>
+  <p>Scan QR code or enter Reg ID to check in a participant</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start">
+  <div class="card">
+    <div class="card-header"><h3>Scan / Manual entry</h3></div>
+    <div class="card-body">
+
+      <!-- QR Scanner area (camera integration hook) -->
+      <div class="qr-area" id="qr-area" title="Connect a QR scanner or use the html5-qrcode library">
+        <div class="qr-scan-line"></div>
+        <span style="font-size:28px">📷</span>
+        <span>Camera / QR scanner here</span>
+        <span style="font-size:11px;text-align:center;padding:0 1rem">Connect html5-qrcode or USB scanner — see README</span>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin:.5rem 0 1.25rem">— or enter manually —</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom:10px">
+          {{ form.reg_id }}
+          {% if form.reg_id.errors %}<div class="errorlist">{{ form.reg_id.errors }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Check in →</button>
+      </form>
+
+      {% if result %}
+        {% if result.status == 'success' %}
+        <div class="gate-result gate-success">
+          <h4>✅ Check-in successful!</h4>
+          <p><strong>{{ result.participant.name }}</strong> — {{ result.participant.college }}</p>
+          <p>Events: {{ result.participant.event_names|default:"—" }}</p>
+          <p>Time: {{ result.participant.checkin_time|time:"H:i:s" }}</p>
+        </div>
+        {% elif result.status == 'already' %}
+        <div class="gate-result gate-already">
+          <h4>⚠️ Already checked in</h4>
+          <p><strong>{{ result.participant.name }}</strong> — {{ result.participant.college }}</p>
+          <p>Events: {{ result.participant.event_names|default:"—" }}</p>
+          <p>First check-in: {{ result.participant.checkin_time|time:"H:i:s" }}</p>
+        </div>
+        {% elif result.status == 'not_found' %}
+        <div class="gate-result gate-notfound">
+          <h4>❌ Not found</h4>
+          <p>No participant with Reg ID <strong>{{ result.reg_id }}</strong></p>
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Today's check-ins</h3>
+      <span class="badge badge-teal">{{ today_count }} today</span>
+    </div>
+    <div style="max-height:480px;overflow-y:auto">
+      <table>
+        <thead><tr><th>Name</th><th>Reg ID</th><th>Time</th></tr></thead>
+        <tbody>
+          {% for p in recent_checkins %}
+          <tr>
+            <td>
+              <div class="td-name">
+                <strong>{{ p.name }}</strong>
+                <span>{{ p.college }}</span>
+              </div>
+            </td>
+            <td style="font-size:11px;color:var(--muted);font-family:monospace">{{ p.reg_id }}</td>
+            <td style="font-size:12px;color:var(--muted)">{{ p.checkin_time|time:"H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="empty-state"><p>No check-ins today</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+const scanner = new Html5QrcodeScanner("qr-area", { fps: 10, qrbox: 200 });
+scanner.render(decodedText => {
+  // decodedText is the gate token URL — fetch it
+  fetch(decodedText, { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'} })
+    .then(r => r.json())
+    .then(data => {
+      // Show result to operator
+      alert(`${data.status}: ${data.name}`);
+    });
+});
+</script>
+{% endblock %}

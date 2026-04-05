@@ -1,0 +1,111 @@
+{% extends 'events/base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+  <div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Overview of registrations and check-ins</p>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('importModal').style.display='flex'">
+    <span class="icon" style="margin-right: 6px;">⬆️</span> Import Data
+  </button>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card accent">
+    <div class="stat-num">{{ total }}</div>
+    <div class="stat-lbl">Registered</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ checked_in }}</div>
+    <div class="stat-lbl">Checked in</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ pending }}</div>
+    <div class="stat-lbl">Pending</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ event_count }}</div>
+    <div class="stat-lbl">Events</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ college_count }}</div>
+    <div class="stat-lbl">Colleges</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem">
+  <div class="card">
+    <div class="card-header">
+      <h3>Recent registrations</h3>
+      <a href="{% url 'participant_list' %}" class="btn btn-sm">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>College</th>
+            <th>Events</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent %}
+          <tr>
+            <td>
+              <div class="td-name">
+                <strong>{{ p.name }}</strong>
+                <span>{{ p.reg_id }}</span>
+              </div>
+            </td>
+            <td style="font-size:12px;color:var(--muted)">{{ p.college }}</td>
+            <td>{{ p.events.count }}</td>
+            <td>
+              {% if p.status == 'checked-in' %}
+                <span class="badge badge-teal">In</span>
+              {% else %}
+                <span class="badge badge-gray">Pending</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="empty-state">No registrations yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Event fill rate</h3>
+    </div>
+    <div class="card-body">
+      {% for e in events %}
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:500">{{ e.name }}</span>
+          <span style="font-size:12px;color:var(--muted)">
+            {{ e.reg_count }}{% if e.max_participants %} / {{ e.max_participants }}{% endif %}
+          </span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar {% if e.fill_percentage >= 90 %}danger{% elif e.fill_percentage >= 70 %}warn{% endif %}"
+               style="width:{{ e.fill_percentage }}%"></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <span class="badge badge-{% if e.category == 'Technical' %}green{% elif e.category == 'Cultural' %}amber{% elif e.category == 'Sports' %}red{% elif e.category == 'Workshop' %}blue{% else %}gray{% endif %}">
+            {{ e.category }}
+          </span>
+          {% if e.date %}<span style="font-size:11px;color:var(--muted);margin-top:1px">{{ e.date }}</span>{% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <p style="font-size:13px;color:var(--muted)">No events created yet. <a href="{% url 'event_list' %}">Add events →</a></p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

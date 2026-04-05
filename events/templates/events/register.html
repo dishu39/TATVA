@@ -1,0 +1,132 @@
+{% extends 'events/base.html' %}
+{% block title %}{% if editing %}Edit{% else %}Register{% endif %} Participant{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+  <div class="page-header">
+    <h2>{% if editing %}Edit Participant{% else %}Register Participant{% endif %}</h2>
+    <p>{% if editing %}Update details for {{ participant.name }}{% else %}Add a new participant to the fest{% endif %}</p>
+  </div>
+  <a href="{% url 'participant_list' %}" class="btn">← Back to list</a>
+</div>
+
+<div class="card" style="max-width:720px">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="{{ form.name.id_for_label }}">Full name *</label>
+          {{ form.name }}
+          {% if form.name.errors %}<div class="errorlist">{{ form.name.errors }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.email.id_for_label }}">Email *</label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="errorlist">{{ form.email.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="{{ form.phone.id_for_label }}">Phone *</label>
+          {{ form.phone }}
+          {% if form.phone.errors %}<div class="errorlist">{{ form.phone.errors }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.college.id_for_label }}">College / Institution *</label>
+          {{ form.college }}
+          {% if form.college.errors %}<div class="errorlist">{{ form.college.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="{{ form.year.id_for_label }}">Year of study</label>
+          {{ form.year }}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.branch.id_for_label }}">Branch / Department</label>
+          {{ form.branch }}
+        </div>
+      </div>
+
+      <div class="form-grid full" style="margin-bottom:14px">
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <label>Select events *</label>
+            <a href="#" id="selectAllEvents" style="font-size:11px;font-weight:600;color:var(--accent);">Select All</a>
+          </div>
+          {% if form.events.errors %}<div class="errorlist">{{ form.events.errors }}</div>{% endif %}
+          <div class="events-checkboxes">
+            {% for checkbox in form.events %}
+            <label>
+              {{ checkbox.tag }}<span>{{ checkbox.choice_label }}</span>
+            </label>
+            {% empty %}
+            <p style="font-size:13px;color:var(--muted)">No events available. <a href="{% url 'event_list' %}">Add events first →</a></p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid full">
+        <div class="form-group">
+          <label for="{{ form.team_name.id_for_label }}">Team name <span style="font-weight:400;text-transform:none;font-size:11px">(optional)</span></label>
+          {{ form.team_name }}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button type="submit" class="btn btn-primary">
+          {% if editing %}Save changes{% else %}Register participant{% endif %}
+        </button>
+        {% if not editing %}
+        <a href="{% url 'register_participant' %}" class="btn">Clear</a>
+        {% endif %}
+        {% if editing %}
+        <a href="{% url 'participant_list' %}" class="btn">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const selectAllBtn = document.getElementById('selectAllEvents');
+  const eventCheckboxes = document.querySelectorAll('.events-checkboxes input[type="checkbox"]');
+  
+  if (selectAllBtn && eventCheckboxes.length > 0) {
+    // Initial text state
+    const updateBtnText = () => {
+      const allChecked = Array.from(eventCheckboxes).every(cb => cb.checked);
+      const someChecked = Array.from(eventCheckboxes).some(cb => cb.checked);
+      if (allChecked) {
+        selectAllBtn.textContent = 'Deselect All';
+      } else {
+        selectAllBtn.textContent = 'Select All';
+      }
+    };
+    
+    updateBtnText(); // Run once on load
+    
+    // Update on individual checkbox clicks
+    eventCheckboxes.forEach(cb => {
+      cb.addEventListener('change', updateBtnText);
+    });
+    
+    // Toggle all on button click
+    selectAllBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const allChecked = Array.from(eventCheckboxes).every(cb => cb.checked);
+      eventCheckboxes.forEach(cb => cb.checked = !allChecked);
+      updateBtnText();
+    });
+  }
+});
+</script>
+{% endblock %}

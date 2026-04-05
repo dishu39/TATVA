@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}TATVA{% endblock %} — College Fest Management</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#1D9E75;--accent-dark:#085041;--accent-light:#E1F5EE;
+  --danger:#E24B4A;--danger-light:#FCEBEB;
+  --warn:#BA7517;--warn-light:#FAEEDA;
+  --info:#185FA5;--info-light:#E6F1FB;
+  --bg:#F8F8F6;--surface:#FFFFFF;--border:#E5E4DC;
+  --text:#1A1A18;--muted:#6B6B66;--subtle:#A0A09A;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Layout */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.main{margin-left:220px;flex:1;padding:2rem;max-width:calc(100% - 220px)}
+
+/* Sidebar */
+.sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+.sidebar-logo h1{font-size:18px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.sidebar-logo p{font-size:11px;color:var(--muted);margin-top:2px}
+.sidebar-nav{flex:1;padding:.5rem 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 1.25rem;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{background:#F4F4F1;color:var(--text);text-decoration:none}
+.nav-item.active{color:var(--accent);background:var(--accent-light);border-left-color:var(--accent)}
+.nav-item .icon{width:16px;text-align:center;font-size:15px}
+.sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+
+/* Page header */
+.page-header{margin-bottom:1.75rem}
+.page-header h2{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.page-header p{font-size:13px;color:var(--muted);margin-top:3px}
+.page-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-body{padding:1.25rem}
+.card-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:14px;font-weight:600;color:var(--text)}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:1.75rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;box-shadow:var(--shadow)}
+.stat-num{font-size:28px;font-weight:700;color:var(--text);line-height:1.1}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:4px;font-weight:500}
+.stat-card.accent{border-color:var(--accent-light);background:var(--accent-light)}
+.stat-card.accent .stat-num{color:var(--accent-dark)}
+.stat-card.accent .stat-lbl{color:var(--accent)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;line-height:1;text-decoration:none}
+.btn:hover{background:#F4F4F1;text-decoration:none}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+.btn-danger{background:var(--danger-light);color:var(--danger);border-color:#FBBFBF}
+.btn-danger:hover{background:#FBD5D5}
+.btn-sm{padding:5px 11px;font-size:12px}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-grid.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.form-input,.form-group input,.form-group select,.form-group textarea{font-size:14px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;outline:none;font-family:inherit;transition:border .15s}
+.form-input:focus,.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+.form-error{font-size:12px;color:var(--danger);margin-top:3px}
+.errorlist{list-style:none;font-size:12px;color:var(--danger);margin-top:3px}
+.errorlist li{padding:0}
+
+/* Checkbox events list */
+.events-checkboxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding:10px 0}
+.events-checkboxes label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .15s}
+.events-checkboxes label:hover{background:var(--accent-light);border-color:var(--accent)}
+.events-checkboxes input[type=checkbox]:checked + span{color:var(--accent);font-weight:500}
+.events-checkboxes label:has(input:checked){background:var(--accent-light);border-color:var(--accent)}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF8}
+.td-name strong{font-weight:500;display:block}
+.td-name span{font-size:11px;color:var(--muted)}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.2px}
+.badge-green{background:#EAF3DE;color:#3B6D11}
+.badge-gray{background:#F1EFE8;color:#5F5E5A}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-amber{background:#FAEEDA;color:#854F0B}
+.badge-blue{background:#E6F1FB;color:#0C447C}
+.badge-teal{background:#E1F5EE;color:#085041}
+
+/* Messages */
+.messages{margin-bottom:1.25rem}
+.message{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:8px;border:1px solid}
+.message.success{background:var(--accent-light);color:var(--accent-dark);border-color:#9FE1CB}
+.message.error{background:var(--danger-light);color:var(--danger);border-color:#F7C1C1}
+.message.warning{background:var(--warn-light);color:var(--warn);border-color:#FAC775}
+
+/* Gate result */
+.gate-result{padding:1rem 1.25rem;border-radius:var(--radius);border:1px solid;margin-top:1rem}
+.gate-result h4{font-size:15px;font-weight:600;margin-bottom:6px}
+.gate-result p{font-size:13px;margin-bottom:3px}
+.gate-success{background:var(--accent-light);border-color:#9FE1CB;color:var(--accent-dark)}
+.gate-already{background:var(--warn-light);border-color:#FAC775;color:var(--warn)}
+.gate-notfound{background:var(--danger-light);border-color:#F7C1C1;color:var(--danger)}
+
+/* Progress bar */
+.progress{height:6px;background:#F1EFE8;border-radius:3px;overflow:hidden;margin-top:4px}
+.progress-bar{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.progress-bar.warn{background:var(--warn)}
+.progress-bar.danger{background:var(--danger)}
+
+/* Search / filter bar */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+.filter-bar input,.filter-bar select{font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none}
+.filter-bar input{flex:1;min-width:180px}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent)}
+
+/* QR scanner area */
+.qr-area{width:220px;height:220px;border:2px dashed var(--border);border-radius:var(--radius);margin:1rem auto;display:flex;align-items:center;justify-content:center;background:#FAFAF8;position:relative;overflow:hidden;cursor:pointer;font-size:13px;color:var(--muted);flex-direction:column;gap:8px}
+.qr-scan-line{position:absolute;left:12px;right:12px;height:2px;background:var(--accent);top:20px;animation:scan 1.8s ease-in-out infinite}
+@keyframes scan{0%{top:20px;opacity:1}50%{top:190px;opacity:1}100%{top:20px;opacity:1}}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap}
+  .main{margin-left:0;max-width:100%}
+  .form-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Empty state */
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-state p{font-size:14px}
+
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:999}
+.modal-content{background:var(--surface);width:90%;max-width:450px;border-radius:var(--radius);padding:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.modal-header h3{font-size:16px;font-weight:600}
+.close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)}
+.close-btn:hover{color:var(--text)}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>TATVA</h1>
+      <p>College Fest Management</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="{% url 'register_participant' %}" class="nav-item {% if 'register' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">✏️</span> Register
+      </a>
+      <a href="{% url 'participant_list' %}" class="nav-item {% if 'participant_list' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">👥</span> Participants
+      </a>
+      <a href="{% url 'gate_checkin' %}" class="nav-item {% if 'gate' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">🚪</span> Gate Check-in
+      </a>
+      <a href="{% url 'event_list' %}" class="nav-item {% if 'event' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">🗓️</span> Events
+      </a>
+      <a href="{% url 'export_csv' %}" class="nav-item">
+        <span class="icon">⬇️</span> Export CSV
+      </a>
+      <a href="#" onclick="document.getElementById('importModal').style.display='flex'; return false;" class="nav-item">
+        <span class="icon">⬆️</span> Import Excel/CSV
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      Logged in as <strong>{{ request.user.username }}</strong><br>
+      <a href="{% url 'logout' %}">Sign out</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+      <div class="message {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Import Google Form Data (Excel/CSV)</h3>
+      <button class="close-btn" onclick="document.getElementById('importModal').style.display='none'">&times;</button>
+    </div>
+    <form action="{% url 'import_excel' %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label>Upload File (.xlsx or .csv)</label>
+        <input type="file" name="file" accept=".xlsx,.csv" required class="form-input" style="padding: 10px;">
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:1.5rem">
+        Make sure the file headers contain standard names like "Name", "Email", "Phone", "College", "Year", "Branch", "Events". The system will auto-detect them.
+      </p>
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" class="btn" onclick="document.getElementById('importModal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Import Data</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

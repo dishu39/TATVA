@@ -1,0 +1,102 @@
+{% extends 'events/base.html' %}
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Events</h2>
+  <p>Manage sub-events for the fest</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1.6fr;gap:1.25rem;align-items:start">
+  <div class="card">
+    <div class="card-header"><h3>Add new event</h3></div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid full" style="margin-bottom:12px">
+          <div class="form-group">
+            <label>Event name *</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="errorlist">{{ form.name.errors }}</div>{% endif %}
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Category</label>{{ form.category }}
+          </div>
+          <div class="form-group">
+            <label>Date</label>{{ form.date }}
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Venue</label>{{ form.venue }}
+          </div>
+          <div class="form-group">
+            <label>Max participants</label>{{ form.max_participants }}
+          </div>
+        </div>
+        <div class="form-grid full">
+          <div class="form-group">
+            <label>Description</label>{{ form.description }}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:4px">Add event</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>All events ({{ events.count }})</h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Venue</th>
+            <th>Registered</th>
+            <th>Max</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in events %}
+          <tr>
+            <td><strong style="font-size:13px">{{ e.name }}</strong></td>
+            <td>
+              <span class="badge badge-{% if e.category == 'Technical' %}green{% elif e.category == 'Cultural' %}amber{% elif e.category == 'Sports' %}red{% elif e.category == 'Workshop' %}blue{% else %}gray{% endif %}">
+                {{ e.category }}
+              </span>
+            </td>
+            <td style="font-size:12px;color:var(--muted)">{{ e.date|default:"—" }}</td>
+            <td style="font-size:12px;color:var(--muted)">{{ e.venue|default:"—" }}</td>
+            <td>
+              {{ e.reg_count }}
+              {% if e.max_participants %}
+              <div class="progress" style="width:60px;margin-top:4px">
+                <div class="progress-bar {% if e.fill_percentage >= 90 %}danger{% elif e.fill_percentage >= 70 %}warn{% endif %}"
+                     style="width:{{ e.fill_percentage }}%"></div>
+              </div>
+              {% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--muted)">{{ e.max_participants|default:"∞" }}</td>
+            <td>
+              <form method="post" action="{% url 'delete_event' e.pk %}" onsubmit="return confirm('Delete event {{ e.name }}? Registrations for this event will be removed.')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger">Del</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="empty-state"><p>No events yet. Add your first event.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

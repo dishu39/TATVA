@@ -1,0 +1,175 @@
+{% extends 'events/base.html' %}
+{% block title %}Participants{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+  <div class="page-header">
+    <h2>Participants</h2>
+    <p>{{ total_count }} participant{{ total_count|pluralize }} found</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button id="bulkDeleteBtn" class="btn btn-danger btn-sm" style="display:none;">🗑️ Delete Selected</button>
+    <a href="{% url 'export_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm">⬇ Export CSV</a>
+    <a href="{% url 'register_participant' %}" class="btn btn-primary btn-sm">+ Register</a>
+  </div>
+</div>
+
+<form method="get">
+  <div class="filter-bar">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search name, email, college, reg ID...">
+    <select name="event">
+      <option value="">All events</option>
+      {% for e in events %}
+      <option value="{{ e.id }}" {% if event_filter == e.id|stringformat:"s" %}selected{% endif %}>{{ e.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="">All statuses</option>
+      <option value="checked-in" {% if status_filter == 'checked-in' %}selected{% endif %}>Checked in</option>
+      <option value="registered" {% if status_filter == 'registered' %}selected{% endif %}>Not checked in</option>
+    </select>
+    <button type="submit" class="btn btn-sm">Filter</button>
+    {% if q or event_filter or status_filter %}
+    <a href="{% url 'participant_list' %}" class="btn btn-sm">Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px;padding-right:0"><input type="checkbox" id="selectAllCheckbox"></th>
+          <th style="width:90px">Reg ID</th>
+          <th>Name</th>
+          <th>College</th>
+          <th>Events</th>
+          <th style="width:100px">Check-in</th>
+          <th style="width:130px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in participants %}
+        <tr>
+          <td style="padding-right:0"><input type="checkbox" class="row-checkbox" value="{{ p.pk }}"></td>
+          <td style="font-size:11px;color:var(--muted);font-family:monospace">{{ p.reg_id }}</td>
+          <td>
+            <div class="td-name">
+              <strong>{{ p.name }}</strong>
+              <span>{{ p.email }}</span>
+            </div>
+          </td>
+          <td style="font-size:13px;color:var(--muted)">{{ p.college }}</td>
+          <td>
+            {% for e in p.events.all %}
+            <span class="badge badge-gray" style="margin:1px">{{ e.name }}</span>
+            {% empty %}<span style="color:var(--subtle);font-size:12px">—</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% if p.status == 'checked-in' %}
+              <span class="badge badge-teal">Checked in</span>
+              {% if p.checkin_time %}<div style="font-size:10px;color:var(--muted);margin-top:3px">{{ p.checkin_time|time:"H:i" }}</div>{% endif %}
+            {% else %}
+              <button class="btn btn-sm btn-primary checkin-btn" data-url="{% url 'quick_checkin' p.pk %}" data-id="{{ p.pk }}">
+                Check in
+              </button>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:5px">
+              <a href="{% url 'edit_participant' p.pk %}" class="btn btn-sm">Edit</a>
+              <form method="post" action="{% url 'delete_participant' p.pk %}" onsubmit="return confirm('Delete {{ p.name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger">Del</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty-state"><p>No participants found</p></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Quick Check-in logic
+  document.querySelectorAll('.checkin-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const url = this.dataset.url;
+      const csrfToken = '{{ csrf_token }}';
+      fetch(url, {method:'POST', headers:{'X-CSRFToken': csrfToken}})
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'ok') {
+            const td = this.closest('td');
+            td.innerHTML = `<span class="badge badge-teal">Checked in</span><div style="font-size:10px;color:var(--muted);margin-top:3px">${data.checkin_time}</div>`;
+          }
+        });
+    });
+  });
+
+  // Bulk Delete logic
+  const selectAllCb = document.getElementById('selectAllCheckbox');
+  const rowCbs = document.querySelectorAll('.row-checkbox');
+  const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+
+  if (selectAllCb) {
+    const updateBulkDeleteBtn = () => {
+      const anyChecked = Array.from(rowCbs).some(cb => cb.checked);
+      bulkDeleteBtn.style.display = anyChecked ? 'inline-flex' : 'none';
+      const allChecked = Array.from(rowCbs).every(cb => cb.checked);
+      selectAllCb.checked = allChecked && rowCbs.length > 0;
+    };
+
+    selectAllCb.addEventListener('change', function() {
+      rowCbs.forEach(cb => cb.checked = this.checked);
+      updateBulkDeleteBtn();
+    });
+
+    rowCbs.forEach(cb => {
+      cb.addEventListener('change', updateBulkDeleteBtn);
+    });
+
+    if (bulkDeleteBtn) {
+      bulkDeleteBtn.addEventListener('click', () => {
+        const checkedValues = Array.from(rowCbs).filter(cb => cb.checked).map(cb => cb.value);
+        if (checkedValues.length > 0 && confirm(`Are you sure you want to delete ${checkedValues.length} selected participant(s)?`)) {
+          bulkDeleteBtn.disabled = true;
+          bulkDeleteBtn.textContent = 'Deleting...';
+          const formData = new FormData();
+          formData.append('participant_ids', checkedValues.join(','));
+          
+          fetch("{% url 'bulk_delete' %}", {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: formData
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.status === 'ok') {
+              window.location.reload();
+            } else {
+              alert('Error deleting participants.');
+              bulkDeleteBtn.disabled = false;
+              bulkDeleteBtn.textContent = '🗑️ Delete Selected';
+            }
+          })
+          .catch(() => {
+            alert('Something went wrong.');
+            bulkDeleteBtn.disabled = false;
+            bulkDeleteBtn.textContent = '🗑️ Delete Selected';
+          });
+        }
+      });
+    }
+  }
+});
+</script>
+{% endblock %}
